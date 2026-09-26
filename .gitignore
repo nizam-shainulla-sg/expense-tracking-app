@@ -1,0 +1,16 @@
+# Virtual environments
+.django_venv/
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Local database (recreate with: python manage.py migrate && python manage.py seed_expenses)
+db.sqlite3
+db.sqlite3-journal
+
+# Environment and OS files
+.env
+.DS_Store

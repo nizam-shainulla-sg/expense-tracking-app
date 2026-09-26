@@ -1,0 +1,32 @@
+{% extends "expenses/base.html" %}
+
+{% block title %}Add expense · Expense Tracker{% endblock %}
+
+{% block hero %}
+<h1>Add an expense</h1>
+<p>Record who spent what, and on which category.</p>
+{% endblock %}
+
+{% block content %}
+<div class="card form-card">
+  <h2>Expense details</h2>
+  <p class="sub">All fields are required.</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="grid">
+      {% for field in form %}
+      <div class="field {% if field.name == 'title' or field.name == 'user' %}full{% endif %} {% if field.errors %}has-error{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {{ field.errors }}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="actions">
+      <a class="btn btn-ghost" href="{% url 'expense_list' %}">Cancel</a>
+      <button class="btn" type="submit">Save expense</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

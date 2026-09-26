@@ -1,0 +1,294 @@
+{% extends "expenses/base.html" %}
+
+{% block extra_head %}
+<style>
+  .hero-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+  .overview { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+  @media (max-width: 860px) { .overview { grid-template-columns: minmax(0, 1fr); } }
+
+  .summary { padding: 24px; display: flex; flex-direction: column; gap: 24px; }
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 5px 14px 5px 5px; border-radius: 999px;
+    border: 1px solid var(--hairline); background: var(--surface);
+    text-decoration: none; font-weight: 500; font-size: 14px; color: var(--ink-2);
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .chip.all { padding-left: 14px; }
+  .chip:hover { border-color: var(--muted); color: var(--ink); }
+  .chip.active { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+  .chip.active .avatar { background: var(--surface); color: var(--ink); border-color: transparent; }
+
+  .hero-number { font-size: clamp(40px, 6vw, 56px); font-weight: 700; letter-spacing: -0.03em; line-height: 1; margin: 0; }
+  .hero-number small { font-size: 0.4em; font-weight: 600; color: var(--muted); letter-spacing: 0; margin-left: 6px; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: auto; }
+  @media (max-width: 520px) { .stats { grid-template-columns: minmax(0, 1fr); } }
+  .stat { background: var(--surface-2); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+  .stat .label { font-size: 13px; color: var(--muted); }
+  .stat .value { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; margin-top: 2px; display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Pie chart */
+  .chart-card { padding: 24px; }
+  .chart-card h2 { font-size: 16px; margin: 0; }
+  .chart-card .sub { font-size: 13px; color: var(--muted); margin: 2px 0 16px; }
+  .chart-body { display: flex; align-items: center; gap: 24px; }
+  @media (max-width: 460px) { .chart-body { flex-direction: column; } }
+  .donut { position: relative; width: 168px; height: 168px; flex: none; }
+  .donut svg { width: 100%; height: 100%; overflow: visible; display: block; }
+  .donut path, .donut circle.slice {
+    fill: var(--c); stroke: var(--surface); stroke-width: 2px; stroke-linejoin: round;
+    cursor: pointer; transition: opacity .15s ease, transform .15s ease; transform-origin: 90px 90px;
+  }
+  .donut.hovering .slice { opacity: 0.3; }
+  .donut.hovering .slice.on { opacity: 1; transform: scale(1.04); }
+  .donut-center {
+    position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none;
+  }
+  .donut-center .v { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+  .donut-center .l { font-size: 12px; color: var(--muted); }
+
+  .legend { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 0; width: 100%; }
+  .legend li {
+    display: grid; grid-template-columns: 10px 1fr auto auto; align-items: center; gap: 10px;
+    padding: 7px 8px; border-radius: 8px; font-size: 14px; cursor: default;
+  }
+  .legend li.on { background: var(--surface-2); }
+  .legend .name { color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .legend .amt { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .legend .pct { color: var(--muted); font-variant-numeric: tabular-nums; width: 3.2em; text-align: right; }
+
+  .tooltip {
+    position: fixed; pointer-events: none; z-index: 10;
+    background: var(--ink); color: var(--surface);
+    padding: 8px 12px; border-radius: 8px; font-size: 13px; line-height: 1.4;
+    box-shadow: var(--shadow); opacity: 0; transition: opacity .1s ease; white-space: nowrap;
+  }
+  .tooltip.show { opacity: 1; }
+  .tooltip b { display: block; }
+
+  .empty-chart { color: var(--muted); font-size: 14px; padding: 40px 0; text-align: center; }
+
+  /* Table */
+  .table-card { margin-top: 20px; overflow: hidden; }
+  .table-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid var(--hairline); }
+  .table-head h2 { font-size: 16px; margin: 0; }
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th {
+    text-align: left; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--muted); padding: 12px 24px; background: var(--surface-2); white-space: nowrap;
+  }
+  td { padding: 14px 24px; border-top: 1px solid var(--hairline); white-space: nowrap; }
+  tbody tr:first-child td { border-top: 0; }
+  tbody tr:hover td { background: var(--surface-2); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.num { font-weight: 600; }
+  .who { display: flex; align-items: center; gap: 10px; }
+  .title-cell { font-weight: 500; }
+  .date-cell { color: var(--ink-2); }
+  .cat { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); }
+  tfoot td { font-weight: 700; background: var(--surface-2); border-top: 1px solid var(--hairline); }
+
+  .empty { padding: 56px 24px; text-align: center; color: var(--ink-2); }
+  .empty p { margin: 0 0 16px; }
+</style>
+{% endblock %}
+
+{% block hero %}
+<div class="hero-row">
+  <div>
+    <h1>{% if selected_user %}{{ selected_user.get_full_name|default:selected_user.username }}'s expenses{% else %}All expenses{% endif %}</h1>
+    <p>Track where the money goes, by person and by category.</p>
+  </div>
+  <a class="btn btn-light" href="{% url 'expense_add' %}{% if selected_user %}?user={{ selected_user.username }}{% endif %}">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    Add expense
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="overview">
+  <div class="card summary">
+    <div>
+      <p class="eyebrow">Showing</p>
+      <div class="chips">
+        <a class="chip all {% if not selected_user %}active{% endif %}" href="{% url 'expense_list' %}">Everyone</a>
+        {% for u in users %}
+        <a class="chip {% if selected_user == u %}active{% endif %}" href="?user={{ u.username }}">
+          <span class="avatar">{{ u.get_full_name|default:u.username|first|upper }}</span>
+          {{ u.get_full_name|default:u.username }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <p class="eyebrow">Total spent</p>
+      <p class="hero-number">{{ total|floatformat:"2g" }}</p>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="label">Expenses</div>
+        <div class="value">{{ count }}</div>
+      </div>
+      <div class="stat">
+        <div class="label">Average</div>
+        <div class="value">{% if count %}{% widthratio total count 1 as avg %}{{ avg|floatformat:"0g" }}{% else %}0{% endif %}</div>
+      </div>
+      <div class="stat">
+        <div class="label">Top category</div>
+        <div class="value">
+          {% if top_category %}<span class="swatch cat-{{ top_category.key }}"></span>{{ top_category.label }}{% else %}—{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card chart-card">
+    <h2>Spending by category</h2>
+    <p class="sub">{% if selected_user %}{{ selected_user.get_full_name|default:selected_user.username }}{% else %}Everyone{% endif %} · share of total</p>
+    {% if by_category %}
+    <div class="chart-body">
+      <div class="donut" id="donut">
+        <svg viewBox="0 0 180 180" role="img" aria-label="Pie chart of spending by category. Values are listed in the legend."></svg>
+        <div class="donut-center"><span class="v">{{ total|floatformat:"0g" }}</span><span class="l">total</span></div>
+      </div>
+      <ul class="legend" id="legend">
+        {% for c in by_category %}
+        <li class="cat-{{ c.key }}" data-key="{{ c.key }}">
+          <span class="swatch"></span>
+          <span class="name">{{ c.label }}</span>
+          <span class="amt">{{ c.total|floatformat:"2g" }}</span>
+          <span class="pct">{% widthratio c.total total 100 %}%</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% else %}
+    <div class="empty-chart">No expenses to chart yet.</div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="card table-card">
+  <div class="table-head">
+    <h2>Transactions</h2>
+    <span class="sub" style="color: var(--muted); font-size: 13px;">{{ count }} item{{ count|pluralize }}</span>
+  </div>
+  {% if expenses %}
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Title</th><th>Person</th><th>Category</th><th class="num">Amount</th></tr>
+      </thead>
+      <tbody>
+        {% for expense in expenses %}
+        <tr>
+          <td class="date-cell">{{ expense.date|date:"j M Y" }}</td>
+          <td class="title-cell">{{ expense.title }}</td>
+          <td>
+            <span class="who">
+              <span class="avatar">{{ expense.user.get_full_name|default:expense.user.username|first|upper }}</span>
+              {{ expense.user.get_full_name|default:expense.user.username }}
+            </span>
+          </td>
+          <td><span class="cat cat-{{ expense.category }}"><span class="swatch"></span>{{ expense.get_category_display }}</span></td>
+          <td class="num">{{ expense.amount|floatformat:"2g" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr><td colspan="4">Total</td><td class="num">{{ total|floatformat:"2g" }}</td></tr>
+      </tfoot>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">
+    <p>No expenses yet.</p>
+    <a class="btn" href="{% url 'expense_add' %}">Add the first one</a>
+  </div>
+  {% endif %}
+</section>
+<div class="tooltip" id="tooltip" role="status"></div>
+{% endblock %}
+
+{% block scripts %}
+{{ by_category|json_script:"category-data" }}
+<script>
+(function () {
+  const data = JSON.parse(document.getElementById("category-data").textContent);
+  const donut = document.getElementById("donut");
+  if (!donut || !data.length) return;
+
+  const svg = donut.querySelector("svg");
+  const legend = document.getElementById("legend");
+  const tooltip = document.getElementById("tooltip");
+  const NS = "http://www.w3.org/2000/svg";
+  const cx = 90, cy = 90, outer = 88, inner = 58;
+  const total = data.reduce((sum, d) => sum + d.total, 0);
+  const fmt = (n) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const pct = (n) => Math.round((n / total) * 100) + "%";
+
+  const point = (r, angle) => [cx + r * Math.sin(angle), cy - r * Math.cos(angle)];
+  function arc(start, end) {
+    const large = end - start > Math.PI ? 1 : 0;
+    const [x1, y1] = point(outer, start), [x2, y2] = point(outer, end);
+    const [x3, y3] = point(inner, end), [x4, y4] = point(inner, start);
+    return `M${x1} ${y1} A${outer} ${outer} 0 ${large} 1 ${x2} ${y2} L${x3} ${y3} A${inner} ${inner} 0 ${large} 0 ${x4} ${y4}Z`;
+  }
+
+  // Slices start at 12 o'clock, largest first; color is fixed per category.
+  let angle = 0;
+  const slices = {};
+  data.forEach((d) => {
+    const sweep = (d.total / total) * Math.PI * 2;
+    let el;
+    if (data.length === 1) {
+      el = document.createElementNS(NS, "path");
+      el.setAttribute("d", `M${cx} ${cy - outer} A${outer} ${outer} 0 1 1 ${cx - 0.01} ${cy - outer}Z M${cx} ${cy - inner} A${inner} ${inner} 0 1 0 ${cx + 0.01} ${cy - inner}Z`);
+      el.setAttribute("fill-rule", "evenodd");
+    } else {
+      el = document.createElementNS(NS, "path");
+      el.setAttribute("d", arc(angle, angle + sweep));
+    }
+    el.setAttribute("class", `slice cat-${d.key}`);
+    svg.appendChild(el);
+    slices[d.key] = el;
+    angle += sweep;
+
+    el.addEventListener("mouseenter", () => highlight(d.key));
+    el.addEventListener("mouseleave", clear);
+    el.addEventListener("mousemove", (e) => {
+      tooltip.innerHTML = `<b>${d.label}</b>${fmt(d.total)} · ${pct(d.total)} · ${d.count} item${d.count === 1 ? "" : "s"}`;
+      tooltip.style.left = e.clientX + 14 + "px";
+      tooltip.style.top = e.clientY + 14 + "px";
+      tooltip.classList.add("show");
+    });
+  });
+
+  function highlight(key) {
+    donut.classList.add("hovering");
+    Object.entries(slices).forEach(([k, el]) => el.classList.toggle("on", k === key));
+    legend.querySelectorAll("li").forEach((li) => li.classList.toggle("on", li.dataset.key === key));
+  }
+  function clear() {
+    donut.classList.remove("hovering");
+    Object.values(slices).forEach((el) => el.classList.remove("on"));
+    legend.querySelectorAll("li").forEach((li) => li.classList.remove("on"));
+    tooltip.classList.remove("show");
+  }
+
+  legend.querySelectorAll("li").forEach((li) => {
+    li.addEventListener("mouseenter", () => highlight(li.dataset.key));
+    li.addEventListener("mouseleave", clear);
+  });
+})();
+</script>
+{% endblock %}

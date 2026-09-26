@@ -1,0 +1,70 @@
+{% extends "expenses/base.html" %}
+
+{% block title %}Create account · Expense Tracker{% endblock %}
+
+{% block extra_head %}
+<style>
+  .password-wrap { position: relative; }
+  .password-wrap input { padding-right: 64px; }
+  .toggle {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    border: 0; background: transparent; color: var(--accent);
+    font: 600 13px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 8px 10px; border-radius: 8px; cursor: pointer;
+  }
+  .toggle:hover { background: var(--surface-2); }
+  .helptext { font-size: 12px; color: var(--muted); }
+  .helptext ul { margin: 4px 0 0; padding-left: 18px; }
+</style>
+{% endblock %}
+
+{% block hero %}
+<h1>Create your account</h1>
+<p>Start tracking where your money goes.</p>
+{% endblock %}
+
+{% block content %}
+<div class="card form-card">
+  <h2>Your details</h2>
+  <p class="sub">All fields are required.</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="grid">
+      {% for field in form %}
+      <div class="field full {% if field.errors %}has-error{% endif %}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {% if field.name == "password1" or field.name == "password2" %}
+        <div class="password-wrap">
+          {{ field }}
+          <button type="button" class="toggle" data-target="{{ field.id_for_label }}" aria-controls="{{ field.id_for_label }}" aria-pressed="false">Show</button>
+        </div>
+        {% else %}
+        {{ field }}
+        {% endif %}
+        {{ field.errors }}
+        {% if field.name == "password1" and field.help_text %}<div class="helptext">{{ field.help_text|safe }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="actions">
+      <a class="btn btn-ghost" href="{% url 'expense_list' %}">Cancel</a>
+      <button class="btn" type="submit">Create account</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll(".toggle").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const input = document.getElementById(btn.dataset.target);
+      const show = input.type === "password";
+      input.type = show ? "text" : "password";
+      btn.textContent = show ? "Hide" : "Show";
+      btn.setAttribute("aria-pressed", String(show));
+    });
+  });
+</script>
+{% endblock %}

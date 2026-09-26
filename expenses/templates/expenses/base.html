@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Expense Tracker{% endblock %}</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --page: #f4f3ef;
+      --surface: #fcfcfb;
+      --surface-2: #f0efec;
+      --ink: #0b0b0b;
+      --ink-2: #52514e;
+      --muted: #898781;
+      --hairline: #e1e0d9;
+      --border: rgba(11, 11, 11, 0.08);
+      --shadow: 0 1px 2px rgba(11, 11, 11, 0.04), 0 8px 24px rgba(11, 11, 11, 0.06);
+      --accent: #2a78d6;
+      --accent-ink: #ffffff;
+      --hero-from: #10213f;
+      --hero-to: #1c5cab;
+      --danger: #d03b3b;
+      --good: #0ca30c;
+      /* Category colors: fixed per category, validated categorical order. */
+      --cat-food: #2a78d6;
+      --cat-transport: #eb6834;
+      --cat-bills: #1baf7a;
+      --cat-shopping: #eda100;
+      --cat-other: #e87ba4;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --page: #0d0d0d;
+        --surface: #1a1a19;
+        --surface-2: #242423;
+        --ink: #ffffff;
+        --ink-2: #c3c2b7;
+        --muted: #898781;
+        --hairline: #2c2c2a;
+        --border: rgba(255, 255, 255, 0.08);
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
+        --accent: #3987e5;
+        --hero-from: #0b1628;
+        --hero-to: #184f95;
+        --cat-food: #3987e5;
+        --cat-transport: #d95926;
+        --cat-bills: #199e70;
+        --cat-shopping: #c98500;
+        --cat-other: #d55181;
+      }
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --surface-2: #242423;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --hairline: #2c2c2a;
+      --border: rgba(255, 255, 255, 0.08);
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
+      --accent: #3987e5;
+      --hero-from: #0b1628;
+      --hero-to: #184f95;
+      --cat-food: #3987e5;
+      --cat-transport: #d95926;
+      --cat-bills: #199e70;
+      --cat-shopping: #c98500;
+      --cat-other: #d55181;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; }
+
+    .hero {
+      background: linear-gradient(135deg, var(--hero-from), var(--hero-to));
+      color: #fff;
+      padding: 20px 0 88px;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; text-decoration: none; letter-spacing: -0.01em; }
+    .brand-mark {
+      width: 32px; height: 32px; border-radius: 9px;
+      display: grid; place-items: center;
+      background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .nav { display: flex; gap: 4px; max-width: 100%; overflow-x: auto; }
+    .nav a {
+      text-decoration: none; padding: 7px 14px; border-radius: 999px; white-space: nowrap;
+      color: rgba(255, 255, 255, 0.78); font-weight: 500; font-size: 14px;
+    }
+    .nav a:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+    @media (max-width: 420px) { .nav a { padding: 7px 10px; } }
+    .nav a.active { color: #fff; background: rgba(255, 255, 255, 0.16); }
+    .hero h1 { margin: 36px 0 4px; font-size: clamp(28px, 4vw, 38px); letter-spacing: -0.02em; line-height: 1.15; }
+    .hero p { margin: 0; color: rgba(255, 255, 255, 0.72); }
+
+    main.wrap { margin-top: -64px; padding-bottom: 48px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 18px; border-radius: 10px; border: 0;
+      background: var(--accent); color: var(--accent-ink);
+      font: 600 14px/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+      text-decoration: none; cursor: pointer;
+      transition: transform .15s ease, filter .15s ease;
+    }
+    .btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .btn-ghost { background: transparent; color: var(--ink-2); border: 1px solid var(--hairline); }
+    .btn-light { background: #fff; color: #10213f; }
+
+    .avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: inline-grid; place-items: center; flex: none;
+      background: var(--surface-2); color: var(--ink-2);
+      font-size: 12px; font-weight: 700; border: 1px solid var(--hairline);
+    }
+    .swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; background: var(--c); }
+    .cat-food { --c: var(--cat-food); }
+    .cat-transport { --c: var(--cat-transport); }
+    .cat-bills { --c: var(--cat-bills); }
+    .cat-shopping { --c: var(--cat-shopping); }
+    .cat-other { --c: var(--cat-other); }
+
+    /* Forms (shared by add + register) */
+    .form-card { max-width: 560px; padding: 28px; }
+    .form-card h2 { margin: 0 0 4px; font-size: 18px; }
+    .form-card .sub { margin: 0 0 24px; color: var(--muted); font-size: 14px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .field.full { grid-column: 1 / -1; }
+    @media (max-width: 520px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+    label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+    input, select {
+      width: 100%; padding: 11px 12px; border-radius: 10px;
+      border: 1px solid var(--hairline); background: var(--surface); color: var(--ink);
+      font: 15px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    input:focus, select:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+    }
+    .errorlist { list-style: none; margin: 0; padding: 0; color: var(--danger); font-size: 13px; }
+    .has-error input, .has-error select { border-color: var(--danger); }
+    .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 28px; }
+
+    .messages { list-style: none; margin: 0 0 20px; padding: 0; }
+    .message {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 18px; border-radius: 12px; font-weight: 500;
+      background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow);
+    }
+    .message.success::before {
+      content: ""; width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--good);
+    }
+
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <div class="topbar">
+        <a class="brand" href="{% url 'expense_list' %}">
+          <span class="brand-mark" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+          </span>
+          Spendwise
+        </a>
+        <nav class="nav">
+          {% url 'expense_list' as list_url %}{% url 'expense_add' as add_url %}
+          <a href="{{ list_url }}" {% if request.path == list_url %}class="active"{% endif %}>Expenses</a>
+          <a href="{{ add_url }}" {% if request.path == add_url %}class="active"{% endif %}>Add expense</a>
+          {% if not user.is_authenticated %}
+          {% url 'register' as register_url %}
+          <a href="{{ register_url }}" {% if request.path == register_url %}class="active"{% endif %}>Create account</a>
+          {% endif %}
+        </nav>
+      </div>
+      {% block hero %}{% endblock %}
+    </div>
+  </header>
+  <main class="wrap">
+    {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}<li class="message {{ message.tags }}" role="status">{{ message }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
