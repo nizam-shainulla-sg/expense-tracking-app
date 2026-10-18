@@ -102,6 +102,13 @@
     }
     .nav a:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
     @media (max-width: 420px) { .nav a { padding: 7px 10px; } }
+    .nav-form { margin: 0; display: flex; }
+    .nav-form button {
+      font: inherit; font-weight: 500; font-size: 14px; cursor: pointer; border: 0; background: transparent;
+      padding: 7px 14px; border-radius: 999px; white-space: nowrap; color: rgba(255, 255, 255, 0.78);
+    }
+    .nav-form button:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+    @media (max-width: 420px) { .nav-form button { padding: 7px 10px; } }
     .nav a.active { color: #fff; background: rgba(255, 255, 255, 0.16); }
     .hero h1 { margin: 36px 0 4px; font-size: clamp(28px, 4vw, 38px); letter-spacing: -0.02em; line-height: 1.15; }
     .hero p { margin: 0; color: rgba(255, 255, 255, 0.72); }
@@ -124,6 +131,7 @@
     }
     .btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
     .btn-ghost { background: transparent; color: var(--ink-2); border: 1px solid var(--hairline); }
+    .btn-danger { background: var(--danger); color: #fff; }
     .btn-light { background: #fff; color: #10213f; }
 
     .avatar {
@@ -188,10 +196,16 @@
         </a>
         <nav class="nav">
           {% url 'expense_list' as list_url %}{% url 'expense_add' as add_url %}
+          {% if user.is_authenticated %}
           <a href="{{ list_url }}" {% if request.path == list_url %}class="active"{% endif %}>Expenses</a>
           <a href="{{ add_url }}" {% if request.path == add_url %}class="active"{% endif %}>Add expense</a>
-          {% if not user.is_authenticated %}
-          {% url 'register' as register_url %}
+          <form class="nav-form" method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" title="Signed in as {{ user.get_full_name|default:user.username }}">Sign out</button>
+          </form>
+          {% else %}
+          {% url 'login' as login_url %}{% url 'register' as register_url %}
+          <a href="{{ login_url }}" {% if request.path == login_url %}class="active"{% endif %}>Sign in</a>
           <a href="{{ register_url }}" {% if request.path == register_url %}class="active"{% endif %}>Create account</a>
           {% endif %}
         </nav>
