@@ -1,0 +1,25 @@
+{% extends "expenses/base.html" %}
+
+{% block title %}Delete expense · Expense Tracker{% endblock %}
+
+{% block hero %}
+<h1>Delete an expense</h1>
+<p>This can't be undone.</p>
+{% endblock %}
+
+{% block content %}
+<div class="card form-card">
+  <h2>Delete this expense?</h2>
+  <p class="sub">
+    <strong>{{ expense.title }}</strong> · {{ expense.amount|floatformat:"2g" }} · {{ expense.date|date:"j M Y" }}
+    · {{ expense.user.get_full_name|default:expense.user.username }}
+  </p>
+  <form method="post">
+    {% csrf_token %}
+    <div class="actions">
+      <a class="btn btn-ghost" href="{% url 'expense_list' %}?user={{ expense.user.username }}" autofocus>Cancel</a>
+      <button class="btn btn-danger" type="submit">Delete</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

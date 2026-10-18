@@ -92,6 +92,11 @@
   .title-cell { font-weight: 500; }
   .date-cell { color: var(--ink-2); }
   .cat { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); }
+  .row-actions { text-align: right; }
+  .row-actions a { font-size: 13px; font-weight: 600; text-decoration: none; color: var(--accent); padding: 4px 8px; border-radius: 6px; }
+  .row-actions a:hover { background: var(--surface-2); }
+  .row-actions a.danger { color: var(--danger); }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   tfoot td { font-weight: 700; background: var(--surface-2); border-top: 1px solid var(--hairline); }
 
   .empty { padding: 56px 24px; text-align: center; color: var(--ink-2); }
@@ -103,9 +108,9 @@
 <div class="hero-row">
   <div>
     <h1>{% if selected_user %}{{ selected_user.get_full_name|default:selected_user.username }}'s expenses{% else %}All expenses{% endif %}</h1>
-    <p>Track where the money goes, by person and by category.</p>
+    <p>{% if is_admin %}Track where the money goes, by person and by category.{% else %}Track where your money goes, by category.{% endif %}</p>
   </div>
-  <a class="btn btn-light" href="{% url 'expense_add' %}{% if selected_user %}?user={{ selected_user.username }}{% endif %}">
+  <a class="btn btn-light" href="{% url 'expense_add' %}{% if is_admin and selected_user %}?user={{ selected_user.username }}{% endif %}">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
     Add expense
   </a>
@@ -115,6 +120,7 @@
 {% block content %}
 <section class="overview">
   <div class="card summary">
+    {% if is_admin %}
     <div>
       <p class="eyebrow">Showing</p>
       <div class="chips">
@@ -127,6 +133,7 @@
         {% endfor %}
       </div>
     </div>
+    {% endif %}
 
     <div>
       <p class="eyebrow">Total spent</p>
@@ -186,7 +193,7 @@
   <div class="table-scroll">
     <table>
       <thead>
-        <tr><th>Date</th><th>Title</th><th>Person</th><th>Category</th><th class="num">Amount</th></tr>
+        <tr><th>Date</th><th>Title</th><th>Person</th><th>Category</th><th class="num">Amount</th><th class="actions-col"><span class="visually-hidden">Actions</span></th></tr>
       </thead>
       <tbody>
         {% for expense in expenses %}
@@ -201,11 +208,15 @@
           </td>
           <td><span class="cat cat-{{ expense.category }}"><span class="swatch"></span>{{ expense.get_category_display }}</span></td>
           <td class="num">{{ expense.amount|floatformat:"2g" }}</td>
+          <td class="row-actions">
+            <a href="{% url 'expense_edit' expense.pk %}" aria-label="Edit {{ expense.title }}">Edit</a>
+            <a class="danger" href="{% url 'expense_delete' expense.pk %}" aria-label="Delete {{ expense.title }}">Delete</a>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
       <tfoot>
-        <tr><td colspan="4">Total</td><td class="num">{{ total|floatformat:"2g" }}</td></tr>
+        <tr><td colspan="4">Total</td><td class="num">{{ total|floatformat:"2g" }}</td><td></td></tr>
       </tfoot>
     </table>
   </div>

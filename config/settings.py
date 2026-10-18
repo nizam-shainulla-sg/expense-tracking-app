@@ -129,3 +129,7 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+# Authentication: sign in with username or email; unauthenticated users are sent to /login/.
+AUTHENTICATION_BACKENDS = ['expenses.auth.EmailOrUsernameBackend']
+LOGIN_URL = 'login'

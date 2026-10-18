@@ -18,8 +18,12 @@ class ExpenseForm(forms.ModelForm):
             "date": forms.DateInput(attrs={"type": "date"}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, choose_user=False, **kwargs):
         super().__init__(*args, **kwargs)
+        if not choose_user:
+            # Only admins pick the owner; for everyone else the view sets it.
+            del self.fields["user"]
+            return
         self.fields["user"].queryset = self.fields["user"].queryset.order_by("first_name")
         self.fields["user"].label_from_instance = lambda u: u.get_full_name() or u.username
 

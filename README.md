@@ -1,6 +1,6 @@
 # Spendwise — Expense Tracker
 
-A small Django app for tracking personal expenses: a list page with a category breakdown chart, an add-expense form, and self-service registration. Built with Python 3.14 and Django 6.1, backed by SQLite.
+A small Django app for tracking personal expenses: a list page with a category breakdown chart, add/edit/delete for expenses, self-service registration, and sign-in with per-user access. Built with Python 3.14 and Django 6.1, backed by SQLite.
 
 This README is written for someone opening the repo for the first time. If you just want the quick reference, see [`CLAUDE.md`](CLAUDE.md).
 
@@ -29,13 +29,13 @@ python manage.py seed_expenses
 python manage.py runserver
 ```
 
-Open **http://localhost:8000/** — you should see the expense list for `nizam` with a category pie chart, seeded sample data, and a total.
+Open **http://localhost:8000/** — you'll be sent to the sign-in page. Create an account (or an admin with `createsuperuser`, below) and sign in. Regular users see only their own expenses; the seeded sample data for `nizam`, `ameen` and `arsalan` is visible to admins only.
 
 If you didn't activate the virtualenv, prefix every command above with `.django_venv/bin/` instead (e.g. `.django_venv/bin/python manage.py migrate`).
 
 ### Optional: admin access
 
-There's no login page yet (see §5), so the only way to edit or delete individual expenses today is through Django admin:
+Admin accounts are Django users with "staff" or "superuser" status. Admins see every user's expenses and can edit or delete any of them. Create the first one with:
 
 ```bash
 python manage.py createsuperuser
@@ -45,11 +45,13 @@ Then visit **http://localhost:8000/admin/**.
 
 ## 3. End-to-end flow: using the app
 
-1. **List page** (`/`) — shows expenses for one user at a time via `?user=<username>` (e.g. `/?user=nizam`, `/?user=ameen`, `/?user=arsalan`), with a total and a pie chart broken down by category.
-2. **Add an expense** (`/add/`) — fill in title, amount, category, and date. On save, you're redirected back to the list, filtered to whichever user you were viewing.
+1. **List page** (`/`) — needs sign-in. Shows your own expenses with a total and a pie chart broken down by category. Admins also get a person switcher (`?user=<username>`, e.g. `/?user=nizam`) and see everyone's expenses.
+2. **Add an expense** (`/add/`) — fill in title, amount, category, and date. It is saved under your account (admins can pick the owner). On save, you're redirected back to the list.
 3. **Register** (`/register/`) — create a new account (name, email, password). This logs you in immediately and redirects you to your own filtered list at `/?user=<generated-username>`. Your username is auto-generated from your email (e.g. `sam@example.com` → `sam`, and `sam2` if that's taken) — there's no username field to fill in.
+4. **Sign in / out** (`/login/`, Sign out in the nav) — sign in with your username or email. Everything except register and login needs a signed-in user.
+5. **Edit / delete** (Edit and Delete on each row) — you can change or remove your own expenses. Regular users only ever see their own expenses; admins see everyone's and can edit or delete any of them.
 
-There is currently no login/logout page — registration is the only way "in," and once you close the browser there's no way to return to that identity except by admin lookup. This is intentional for now (see `docs/specs/registration.md`, §2 "Out of scope").
+The three seeded demo users (nizam, ameen, arsalan) have no password, so they cannot sign in; their sample expenses are visible to admins only.
 
 ## 4. Running tests
 
@@ -100,10 +102,11 @@ You don't need the slash command to write or run tests manually — it's a conve
 config/                      Django project package: settings, root URLconf
 expenses/                    the only app
 ├── models.py                Expense model
+├── auth.py                  EmailOrUsernameBackend, LoginForm
 ├── forms.py                 ExpenseForm, RegistrationForm
-├── views.py                 expense_list, expense_add, register
-├── urls.py                  named routes: expense_list, expense_add, register
-├── templates/expenses/      base.html + list/add/register pages
+├── views.py                 list/add/edit/delete, register, sign-in/out
+├── urls.py                  named routes: expense_list, expense_add, expense_edit, expense_delete, register, login, logout
+├── templates/expenses/      base.html + list/add/delete/register/login pages
 ├── management/commands/     seed_expenses
 └── tests.py                 all tests live here
 docs/

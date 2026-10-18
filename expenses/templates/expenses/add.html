@@ -1,10 +1,10 @@
 {% extends "expenses/base.html" %}
 
-{% block title %}Add expense · Expense Tracker{% endblock %}
+{% block title %}{{ title|default:"Add expense" }} · Expense Tracker{% endblock %}
 
 {% block hero %}
-<h1>Add an expense</h1>
-<p>Record who spent what, and on which category.</p>
+<h1>{{ heading|default:"Add an expense" }}</h1>
+<p>{{ intro|default:"Record who spent what, and on which category." }}</p>
 {% endblock %}
 
 {% block content %}
@@ -25,7 +25,7 @@
     </div>
     <div class="actions">
       <a class="btn btn-ghost" href="{% url 'expense_list' %}">Cancel</a>
-      <button class="btn" type="submit">Save expense</button>
+      <button class="btn" type="submit">{{ submit_label|default:"Save expense" }}</button>
     </div>
   </form>
 </div>
