@@ -1,6 +1,10 @@
+from datetime import date
+
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
+
+from .models import Expense
 
 User = get_user_model()
 
@@ -76,7 +80,9 @@ class RegistrationTests(TestCase):
         self.assertFalse(self.new_users().exists())
 
     def test_password_similar_to_email_rejected(self):
-        response = self.post(email="sunflower.gardens@example.com", password1="sunflowergardens", password2="sunflowergardens")
+        response = self.post(
+            email="sunflower.gardens@example.com", password1="sunflowergardens", password2="sunflowergardens"
+        )
         self.assertIn("too similar", " ".join(response.context["form"].errors["password2"]))
         self.assertFalse(self.new_users().exists())
 
@@ -231,10 +237,10 @@ class ExpenseVisibilityTests(TestCase):
         cls.jo = User.objects.create_user(username="jo", password=pw, first_name="Jo Lee")
         cls.admin = User.objects.create_user(username="boss", password=pw, first_name="Boss", is_staff=True)
         cls.root = User.objects.create_superuser(username="root", password=pw)
-        from .models import Expense
-        from datetime import date
         Expense.objects.create(user=cls.sam, title="Sam lunch", amount="10.00", category="food", date=date(2026, 1, 1))
-        Expense.objects.create(user=cls.jo, title="Jo taxi", amount="20.00", category="transport", date=date(2026, 1, 2))
+        Expense.objects.create(
+            user=cls.jo, title="Jo taxi", amount="20.00", category="transport", date=date(2026, 1, 2)
+        )
 
     def get(self, as_user=None, **params):
         if as_user:
@@ -297,7 +303,6 @@ class AddExpenseAccessTests(TestCase):
     data = {"title": "Coffee", "amount": "3.50", "category": "food", "date": "2026-02-03"}
 
     def test_anonymous_is_sent_to_login_and_nothing_is_saved(self):
-        from .models import Expense
         self.assertRedirects(self.client.get(self.url), f"{reverse('login')}?next={self.url}")
         response = self.client.post(self.url, self.data)
         self.assertRedirects(response, f"{reverse('login')}?next={self.url}")
@@ -308,14 +313,12 @@ class AddExpenseAccessTests(TestCase):
         self.assertNotContains(self.client.get(self.url), 'name="user"')
 
     def test_regular_user_expense_is_always_their_own(self):
-        from .models import Expense
         self.client.force_login(self.sam)
         response = self.client.post(self.url, {**self.data, "user": self.jo.pk})
         self.assertRedirects(response, f"{reverse('expense_list')}?user=sam")
         self.assertEqual(Expense.objects.get(title="Coffee").user, self.sam)
 
     def test_admin_can_choose_the_owner(self):
-        from .models import Expense
         self.client.force_login(self.admin)
         self.assertContains(self.client.get(self.url), 'name="user"')
         self.client.post(self.url, {**self.data, "user": self.jo.pk})
@@ -327,14 +330,16 @@ class ExpenseEditDeleteTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        from datetime import date
-        from .models import Expense
         pw = "blue-harbor-lantern-42"
         cls.sam = User.objects.create_user(username="sam", password=pw, first_name="Sam Carter")
         cls.jo = User.objects.create_user(username="jo", password=pw, first_name="Jo Lee")
         cls.admin = User.objects.create_user(username="boss", password=pw, is_staff=True)
-        cls.mine = Expense.objects.create(user=cls.sam, title="Sam lunch", amount="10.00", category="food", date=date(2026, 1, 1))
-        cls.theirs = Expense.objects.create(user=cls.jo, title="Jo taxi", amount="20.00", category="transport", date=date(2026, 1, 2))
+        cls.mine = Expense.objects.create(
+            user=cls.sam, title="Sam lunch", amount="10.00", category="food", date=date(2026, 1, 1)
+        )
+        cls.theirs = Expense.objects.create(
+            user=cls.jo, title="Jo taxi", amount="20.00", category="transport", date=date(2026, 1, 2)
+        )
 
     def edit_url(self, e):
         return reverse("expense_edit", args=[e.pk])
@@ -346,7 +351,6 @@ class ExpenseEditDeleteTests(TestCase):
 
     # --- anonymous
     def test_anonymous_is_sent_to_login_and_nothing_changes(self):
-        from .models import Expense
         for url in (self.edit_url(self.mine), self.delete_url(self.mine)):
             with self.subTest(url=url):
                 self.assertRedirects(self.client.get(url), f"{reverse('login')}?next={url}")
@@ -366,7 +370,8 @@ class ExpenseEditDeleteTests(TestCase):
         response = self.client.post(self.edit_url(self.mine), self.data, follow=True)
         self.assertRedirects(response, f"{reverse('expense_list')}?user=sam")
         self.assertContains(response, "Expense updated.")
-        self.mine.refresh_from_db(); self.theirs.refresh_from_db()
+        self.mine.refresh_from_db()
+        self.theirs.refresh_from_db()
         self.assertEqual((self.mine.title, str(self.mine.amount), self.mine.user), ("Sam dinner", "12.50", self.sam))
         self.assertEqual(self.theirs.title, "Jo taxi")
 
@@ -386,7 +391,6 @@ class ExpenseEditDeleteTests(TestCase):
 
     # --- other users: 404 on everything
     def test_other_users_expense_is_404_for_edit_and_delete(self):
-        from .models import Expense
         self.client.force_login(self.sam)
         for url in (self.edit_url(self.theirs), self.delete_url(self.theirs)):
             with self.subTest(url=url):
@@ -403,14 +407,12 @@ class ExpenseEditDeleteTests(TestCase):
 
     # --- owner: delete
     def test_delete_get_confirms_and_deletes_nothing(self):
-        from .models import Expense
         self.client.force_login(self.sam)
         response = self.client.get(self.delete_url(self.mine))
         self.assertContains(response, "Sam lunch")
         self.assertTrue(Expense.objects.filter(pk=self.mine.pk).exists())
 
     def test_delete_post_removes_exactly_that_expense(self):
-        from .models import Expense
         self.client.force_login(self.sam)
         response = self.client.post(self.delete_url(self.mine), follow=True)
         self.assertRedirects(response, f"{reverse('expense_list')}?user=sam")
@@ -420,7 +422,6 @@ class ExpenseEditDeleteTests(TestCase):
         self.assertEqual(response.context["total"], 0)
 
     def test_delete_without_csrf_token_is_rejected(self):
-        from .models import Expense
         client = Client(enforce_csrf_checks=True)
         client.force_login(self.sam)
         self.assertEqual(client.post(self.delete_url(self.mine)).status_code, 403)
@@ -436,7 +437,6 @@ class ExpenseEditDeleteTests(TestCase):
         self.assertEqual((self.theirs.title, self.theirs.user), ("Sam dinner", self.sam))
 
     def test_admin_can_delete_anyones_expense(self):
-        from .models import Expense
         self.client.force_login(self.admin)
         response = self.client.post(self.delete_url(self.theirs))
         self.assertRedirects(response, f"{reverse('expense_list')}?user=jo")

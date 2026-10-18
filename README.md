@@ -63,6 +63,22 @@ python manage.py test expenses.tests.RegistrationTests.test_valid_registration_c
 
 Migration `0002` seeds the demo users into the *test* database too, so tests must count only the users/expenses they themselves create — never assume the `User` table starts empty.
 
+### Linting
+
+The project uses [ruff](https://docs.astral.sh/ruff/) (config in `pyproject.toml`; generated migrations are excluded):
+
+```bash
+.django_venv/bin/pip install -r requirements-dev.txt   # installs ruff (pinned)
+.django_venv/bin/ruff check .                          # lint
+.django_venv/bin/ruff check . --fix                    # apply safe auto-fixes (e.g. import order)
+```
+
+Rules: pycodestyle (E, W), pyflakes (F), import order (I), bugbear (B), pyupgrade (UP), Django (DJ), comprehensions (C4) and simplify (SIM), with a 120-character line limit. `ruff format` is not enforced.
+
+### Continuous integration
+
+`.github/workflows/ci.yml` runs on every pull request and on pushes to `main`, with two parallel jobs: **Lint (ruff)** runs `ruff check .`, and **Tests (Django)** runs `manage.py check` and `manage.py test` on Python 3.14. A newer push to the same branch cancels the older run. To make them blocking, require both checks in the branch protection rules for `main`.
+
 ## 5. The spec → test workflow (for contributors)
 
 This repo has a lightweight process for turning a written feature spec into test coverage, using two purpose-built Claude Code subagents and a slash command that chains them:
