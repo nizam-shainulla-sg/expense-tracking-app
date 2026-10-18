@@ -75,6 +75,10 @@ The project uses [ruff](https://docs.astral.sh/ruff/) (config in `pyproject.toml
 
 Rules: pycodestyle (E, W), pyflakes (F), import order (I), bugbear (B), pyupgrade (UP), Django (DJ), comprehensions (C4) and simplify (SIM), with a 120-character line limit. `ruff format` is not enforced.
 
+### Continuous integration
+
+`.github/workflows/ci.yml` runs on every pull request and on pushes to `main`, with two parallel jobs: **Lint (ruff)** runs `ruff check .`, and **Tests (Django)** runs `manage.py check` and `manage.py test` on Python 3.14. A newer push to the same branch cancels the older run. To make them blocking, require both checks in the branch protection rules for `main`.
+
 ## 5. The spec → test workflow (for contributors)
 
 This repo has a lightweight process for turning a written feature spec into test coverage, using two purpose-built Claude Code subagents and a slash command that chains them:
