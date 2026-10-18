@@ -1,0 +1,16 @@
+[tool.ruff]
+line-length = 120
+target-version = "py314"
+extend-exclude = [".django_venv", "expenses/migrations"]  # generated code is not linted
+
+[tool.ruff.lint]
+select = [
+    "E", "W",  # pycodestyle
+    "F",       # pyflakes
+    "I",       # isort (import order)
+    "B",       # flake8-bugbear
+    "UP",      # pyupgrade
+    "DJ",      # flake8-django
+    "C4",      # flake8-comprehensions
+    "SIM",     # flake8-simplify
+]

@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Environment
 
 - Python 3.14 and Django 6.1 live in the virtualenv at `.django_venv/` (note the non-standard name). Call its binaries directly (`.django_venv/bin/python`) or activate it with `source .django_venv/bin/activate`.
-- Dependencies are pinned in `requirements.txt` (`pip install -r requirements.txt`). There is no linter or formatter configured.
+- Dependencies are pinned in `requirements.txt` (`pip install -r requirements.txt`). Lint with ruff (`pip install -r requirements-dev.txt`, config in `pyproject.toml`); there is no formatter configured.
 - The system `/usr/bin/python3` is Apple's stub and does not work; use the venv or `/usr/local/bin/python3`.
 
 ## Commands
@@ -15,6 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 .django_venv/bin/python manage.py makemigrations expenses # after changing expenses/models.py
 .django_venv/bin/python manage.py migrate
 .django_venv/bin/python manage.py check
+.django_venv/bin/ruff check .                            # lint (must pass; migrations are excluded)
 .django_venv/bin/python manage.py test                   # all tests
 .django_venv/bin/python manage.py test expenses.tests.SomeTestCase.test_method  # single test
 .django_venv/bin/python manage.py createsuperuser        # for /admin/
